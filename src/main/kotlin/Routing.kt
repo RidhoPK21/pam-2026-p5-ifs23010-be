@@ -98,6 +98,9 @@ fun Application.configureRouting() {
                 get("/{id}") {
                     todoService.getById(call)
                 }
+                get("/stats") {
+                    todoService.getStats(call)
+                }
                 put("/{id}") {
                     todoService.put(call)
                 }
