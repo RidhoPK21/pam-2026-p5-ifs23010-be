@@ -89,6 +89,9 @@ fun Application.configureRouting() {
 
             // Route Todos
             route("/todos") {
+                get("/stats") {
+                    todoService.getStats(call)
+                }
                 get {
                     todoService.getAll(call)
                 }
@@ -97,9 +100,6 @@ fun Application.configureRouting() {
                 }
                 get("/{id}") {
                     todoService.getById(call)
-                }
-                get("/stats") {
-                    todoService.getStats(call)
                 }
                 put("/{id}") {
                     todoService.put(call)
