@@ -13,28 +13,28 @@ import org.jetbrains.exposed.sql.lowerCase
 import java.util.*
 
 class TodoRepository : ITodoRepository {
-    override suspend fun getAll(userId: String, search: String, page: Int, perPage: Int, isComplete: Boolean?): List<Todo> = suspendTransaction {
+    override suspend fun getAll(userId: String, search: String, page: Int, perPage: Int, isComplete: Boolean?, urgency: Int?): List<Todo> = suspendTransaction {
         val query = if (search.isBlank()) {
             TodoDAO.find {
-                if (isComplete != null) {
-                    (TodoTable.userId eq UUID.fromString(userId)) and (TodoTable.isDone eq isComplete)
-                } else {
-                    (TodoTable.userId eq UUID.fromString(userId))
-                }
-            }.orderBy(TodoTable.createdAt to SortOrder.DESC)
+                var op: org.jetbrains.exposed.sql.Op<Boolean> = (TodoTable.userId eq UUID.fromString(userId))
+                if (isComplete != null) op = op and (TodoTable.isDone eq isComplete)
+                if (urgency != null) op = op and (TodoTable.urgency eq urgency) // <--- FILTER URGENSI
+                op
+            }
         } else {
             val keyword = "%${search.lowercase()}%"
             TodoDAO.find {
                 var op: org.jetbrains.exposed.sql.Op<Boolean> = (TodoTable.userId eq UUID.fromString(userId)) and (TodoTable.title.lowerCase() like keyword)
-                if (isComplete != null) {
-                    op = op and (TodoTable.isDone eq isComplete)
-                }
+                if (isComplete != null) op = op and (TodoTable.isDone eq isComplete)
+                if (urgency != null) op = op and (TodoTable.urgency eq urgency) // <--- FILTER URGENSI
                 op
-            }.orderBy(TodoTable.title to SortOrder.ASC)
+            }
         }
 
-        // Terapkan Pagination (Limit & Offset)
-        query.limit(perPage).offset(((page - 1) * perPage).toLong()).map(::todoDAOToModel)    }
+        // Terapkan Pengurutan: Pertama berdasarkan Urgensi (High:3 -> Low:1), lalu Waktu Dibuat
+        query.orderBy(TodoTable.urgency to SortOrder.DESC, TodoTable.createdAt to SortOrder.DESC)
+            .limit(perPage).offset(((page - 1) * perPage).toLong()).map(::todoDAOToModel)
+    }
 
     override suspend fun getHomeStats(userId: String): Map<String, Long> = suspendTransaction {
         val total = TodoDAO.find { TodoTable.userId eq UUID.fromString(userId) }.count()
@@ -61,6 +61,7 @@ class TodoRepository : ITodoRepository {
             description = todo.description
             cover = todo.cover
             isDone = todo.isDone
+            urgency = todo.urgency
             createdAt = todo.createdAt
             updatedAt = todo.updatedAt
         }
@@ -82,6 +83,7 @@ class TodoRepository : ITodoRepository {
             todoDAO.description = newTodo.description
             todoDAO.cover = newTodo.cover
             todoDAO.isDone = newTodo.isDone
+            todoDAO.urgency = newTodo.urgency
             todoDAO.updatedAt = newTodo.updatedAt
             true
         } else {

@@ -3,7 +3,7 @@ package org.delcom.repositories
 import org.delcom.entities.Todo
 
 interface  ITodoRepository {
-    suspend fun getAll(userId: String, search: String, page: Int, perPage: Int, isComplete: Boolean?): List<Todo>
+    suspend fun getAll(userId: String, search: String, page: Int, perPage: Int, isComplete: Boolean?, urgency: Int?): List<Todo>
     // Fungsi baru untuk statistik Home
     suspend fun getHomeStats(userId: String): Map<String, Long>
     suspend fun getById(todoId: String): Todo?

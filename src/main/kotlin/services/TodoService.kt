@@ -34,6 +34,8 @@ class TodoService(
         val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
         val perPage = call.request.queryParameters["perPage"]?.toIntOrNull() ?: 10
         val filter = call.request.queryParameters["filter"] // nilainya bisa: "complete" atau "active"
+        val urgencyStr = call.request.queryParameters["urgency"]
+        val urgencyInt = urgencyStr?.toIntOrNull() // 1, 2, atau 3
 
         val isComplete = when(filter) {
             "complete" -> true
@@ -42,7 +44,7 @@ class TodoService(
         }
 
         // Panggil fungsi getAll yang baru
-        val todos = todoRepo.getAll(user.id, search, page, perPage, isComplete)
+        val todos = todoRepo.getAll(user.id, search, page, perPage, isComplete, urgencyInt)
 
         val response = DataResponse(
             "success",
